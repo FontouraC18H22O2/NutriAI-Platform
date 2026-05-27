@@ -68,4 +68,6 @@ dependencies {
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     // Conversor automático de JSON para Objetos Kotlin (Gson)
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+    // Extensão para conseguir usar o "viewModel()" dentro dos ecrãs em Jetpack Compose
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.1")
 }
