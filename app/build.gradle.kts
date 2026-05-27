@@ -53,4 +53,19 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+    // Dependências do CameraX para controlo do hardware (Sintaxe Otimizada)
+    val cameraxVersion = "1.3.3"
+    implementation("androidx.camera:camera-core:$cameraxVersion")
+    implementation("androidx.camera:camera-camera2:$cameraxVersion") // Mantém o camera-camera2, mas usamos aspas duplas limpas
+    implementation("androidx.camera:camera-lifecycle:$cameraxVersion")
+    implementation("androidx.camera:camera-view:$cameraxVersion")
+    implementation("io.coil-kt:coil-compose:2.6.0")
+
+    // Dependência para gerir permissões de forma simples no Compose (Versão Estabilizada)
+    implementation("com.google.accompanist:accompanist-permissions:0.35.0-alpha")
+
+    // Retrofit para chamadas HTTP API
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    // Conversor automático de JSON para Objetos Kotlin (Gson)
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
 }

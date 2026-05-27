@@ -30,5 +30,5 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun AppNavigation() {
-    pt.gaya.nutriai.presentation.meals.MealsScreen()
+    pt.gaya.nutriai.presentation.camera.CameraScreen()
 }
