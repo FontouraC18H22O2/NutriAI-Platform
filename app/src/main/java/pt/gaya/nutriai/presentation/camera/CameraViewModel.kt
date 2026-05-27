@@ -1,5 +1,6 @@
 package pt.gaya.nutriai.presentation.camera
 
+import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -9,6 +10,8 @@ import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
+import pt.gaya.nutriai.data.local.AppDatabase
+import pt.gaya.nutriai.data.local.MealEntity
 import pt.gaya.nutriai.data.network.AnalysisResponse
 import pt.gaya.nutriai.data.network.RetrofitClient
 import java.io.File
@@ -27,7 +30,8 @@ class CameraViewModel : ViewModel() {
     var uiState: CameraUiState by mutableStateOf(CameraUiState.Idle)
         private set
 
-    fun uploadMealPhoto(photoPath: String) {
+    // Adicionamos o parâmetro `context` para a função conseguir aceder ao ficheiro SQLite local
+    fun uploadMealPhoto(context: Context, photoPath: String) {
         // Altera o estado para "A Carregar..." para podermos mostrar um spinner/progresso no ecrã
         uiState = CameraUiState.Loading
 
@@ -48,6 +52,27 @@ class CameraViewModel : ViewModel() {
 
                 // Faz a chamada real à internet através do Retrofit
                 val response = RetrofitClient.apiService.analyzeMealPhoto(body)
+
+                // ==========================================
+                // 💾 GRAVAÇÃO AUTOMÁTICA NA BASE DE DADOS LOCAL
+                // ==========================================
+                try {
+                    val mealDao = AppDatabase.getDatabase(context).mealDao()
+
+                    val novaRefeicao = MealEntity(
+                        mealType = response.mealType,
+                        totalCalories = response.totalCalories,
+                        protein = response.protein,
+                        carbs = response.carbs,
+                        fats = response.fats,
+                        detectedFoods = response.detectedFoods.joinToString(", ")
+                    )
+                    mealDao.insertMeal(novaRefeicao)
+                } catch (dbError: Exception) {
+                    // Se a BD falhar por algum motivo, fazemos print mas não travamos a app
+                    dbError.printStackTrace()
+                }
+                // ==========================================
 
                 // Se correu bem, passa os dados macro nutricionais da IA para o ecrã!
                 uiState = CameraUiState.Success(response)

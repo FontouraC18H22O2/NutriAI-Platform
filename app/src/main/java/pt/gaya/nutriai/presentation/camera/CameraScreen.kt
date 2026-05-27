@@ -13,6 +13,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,6 +23,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
@@ -37,7 +39,6 @@ import java.util.Locale
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun CameraScreen(
-    // Injetamos a nossa ViewModel diretamente no ecrã usando a biblioteca padrão do Compose
     cameraViewModel: CameraViewModel = viewModel()
 ) {
     val context = LocalContext.current
@@ -47,42 +48,120 @@ fun CameraScreen(
     val imageCapture = remember { ImageCapture.Builder().build() }
     var capturedPhotoPath by remember { mutableStateOf<String?>(null) }
 
-    // Escutamos o estado da rede vindo da ViewModel
     val networkState = cameraViewModel.uiState
 
     if (!cameraPermissionState.status.isGranted) {
-        Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(24.dp), contentAlignment = Alignment.Center) {
+        Box(modifier = Modifier.fillMaxSize().background(Color(0xFF121212)).padding(24.dp), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(text = "O NutriAI necessita de acesso à câmara.", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(bottom = 16.dp))
+                Text(text = "O NutriAI necessita de acesso à câmara.", style = MaterialTheme.typography.bodyLarge, color = Color(0xFFECEFF1), modifier = Modifier.padding(bottom = 16.dp))
                 Button(onClick = { cameraPermissionState.launchPermissionRequest() }) { Text("Dar Permissão") }
             }
         }
     } else if (networkState is CameraUiState.Success) {
-        // [MODO RESULTADO DA IA] Mostra o que o servidor devolveu
-        Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(24.dp), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Análise Concluída com Sucesso! 🎉", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+        // [MODO RESULTADO DA IA] - DESIGN PREMIUM REMODELADO
+        val mealData = networkState.data
 
-                val mealData = networkState.data
-                Text("Refeição Detetada: ${mealData.mealType}", fontWeight = FontWeight.Bold)
-                Text("Calorias Totais: ${mealData.totalCalories} kcal")
-                Text("Proteínas: ${mealData.protein}g | Carbohidratos: ${mealData.carbs}g | Gorduras: ${mealData.fats}g")
-                Text("Alimentos: ${mealData.detectedFoods.joinToString(", ")}")
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFF121212)) // Fundo Preto Total Premium
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text(
+                text = "Análise Concluída com Sucesso! 🎉",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = Color(0xFFECEFF1),
+                modifier = Modifier.padding(top = 16.dp)
+            )
 
-                Spacer(modifier = Modifier.height(24.dp))
-                Button(onClick = {
+            // CARD PRINCIPAL: Tipo de Refeição e Calorias
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E)),
+                shape = RoundedCornerShape(16.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = mealData.mealType,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color(0xFFB0BEC5),
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "${mealData.totalCalories}",
+                        style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.ExtraBold),
+                        color = Color(0xFF64B5F6) // Azul Néon focado no valor energético
+                    )
+                    Text(
+                        text = "Calorias Totais (kcal)",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFF78909C)
+                    )
+                }
+            }
+
+            // LINHA DE MACRONUTRIENTES: 3 Blocos Simétricos lado a lado
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                MacroNutrientBadge(label = "Proteínas", value = "${mealData.protein}g", color = Color(0xFF81C784), modifier = Modifier.weight(1f))
+                MacroNutrientBadge(label = "Carbos", value = "${mealData.carbs}g", color = Color(0xFFFFB74D), modifier = Modifier.weight(1f))
+                MacroNutrientBadge(label = "Gorduras", value = "${mealData.fats}g", color = Color(0xFFE57373), modifier = Modifier.weight(1f))
+            }
+
+            // ALIMENTOS DETETADOS
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E)),
+                shape = RoundedCornerShape(14.dp)
+            ) {
+                Column(modifier = Modifier.padding(18.dp)) {
+                    Text(
+                        text = "Alimentos Detetados pela IA:",
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                        color = Color(0xFFECEFF1)
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    mealData.detectedFoods.forEach { food ->
+                        Text(
+                            text = "• $food",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color(0xFFCFD8DC),
+                            modifier = Modifier.padding(vertical = 3.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            // BOTÃO RECOMEÇAR
+            Button(
+                onClick = {
                     capturedPhotoPath = null
                     cameraViewModel.resetToIdle()
-                }) {
-                    Text("Tirar Nova Foto")
-                }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF37474F)),
+                shape = RoundedCornerShape(50),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp)
+            ) {
+                Text("Tirar Nova Foto", color = Color.White, fontWeight = FontWeight.Bold)
             }
         }
     } else {
         // [MODO CAPTURA / CONFIRMAÇÃO NORMAL]
         Box(modifier = Modifier.fillMaxSize()) {
             if (capturedPhotoPath != null) {
-                // Preview da foto tirada
                 Image(
                     painter = rememberAsyncImagePainter(File(capturedPhotoPath!!)),
                     contentDescription = "Foto",
@@ -90,20 +169,17 @@ fun CameraScreen(
                     contentScale = ContentScale.Crop
                 )
 
-                // Se estiver a carregar o upload, bloqueia o ecrã com um Spinner de progresso
                 if (networkState is CameraUiState.Loading) {
                     Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.5f)), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                        CircularProgressIndicator(color = Color(0xFF64B5F6))
                     }
                 } else {
-                    // Painel com os botões normais de decisão
                     Column(
-                        modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter).background(Color.Black.copy(alpha = 0.7f)).padding(24.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter).background(Color.Black.copy(alpha = 0.75f)).padding(24.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
                         Text(text = "Analisar esta refeição?", color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.CenterHorizontally))
 
-                        // Mostra o erro caso a chamada de rede falhe
                         if (networkState is CameraUiState.Error) {
                             Text(text = networkState.message, color = Color.Red, style = MaterialTheme.typography.bodySmall, modifier = Modifier.align(Alignment.CenterHorizontally))
                         }
@@ -116,18 +192,14 @@ fun CameraScreen(
                             ) { Text("Repetir") }
 
                             Button(
-                                onClick = {
-                                    // Dispara o upload real do ficheiro para a API!
-                                    cameraViewModel.uploadMealPhoto(capturedPhotoPath!!)
-                                },
+                                onClick = { cameraViewModel.uploadMealPhoto(capturedPhotoPath!!) },
                                 modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E88E5))
                             ) { Text("Analisar Prato") }
                         }
                     }
                 }
             } else {
-                // Visor ativo da câmara nativa
                 AndroidView(
                     factory = { ctx ->
                         PreviewView(ctx).apply {
@@ -157,6 +229,30 @@ fun CameraScreen(
                     ) {}
                 }
             }
+        }
+    }
+}
+
+// COMPONENTE AUXILIAR DOS MACRONUTRIENTES
+@Composable
+fun RowScope.MacroNutrientBadge(
+    label: String,
+    value: String,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E)),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(text = label, style = MaterialTheme.typography.bodySmall, color = Color(0xFF78909C))
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(text = value, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), color = color)
         }
     }
 }
